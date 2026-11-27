@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 using TMPro;
 
 public class PlayerMove : MonoBehaviour
@@ -12,18 +11,32 @@ public class PlayerMove : MonoBehaviour
     private Rigidbody2D rb;
     private int score = 0;
     private bool gameOver = false;
+    private bool started = false;     // 按 K / 点击才开始发球
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        ResetBall();
-        UpdateUI();
+        transform.position = new Vector3(0f, -2f, 0f);
+        ShowReady();
     }
+
+    // ---------------- UI ----------------
 
     void UpdateUI()
     {
         scoreText.text = "SCORE " + score + "    LIFE " + lives;
     }
+
+    void ShowReady()
+    {
+        started = false;
+        gameOver = false;
+        if (rb != null) rb.linearVelocity = Vector2.zero;
+        transform.position = new Vector3(0f, -2f, 0f);
+        scoreText.text = "按 K 或点击屏幕\n开始游戏";
+    }
+
+    // ---------------- 球 ----------------
 
     void ResetBall()
     {
@@ -34,10 +47,25 @@ public class PlayerMove : MonoBehaviour
         rb.linearVelocity = new Vector2(Mathf.Cos(ang) * sx, Mathf.Sin(ang)) * speed;
     }
 
+    /// <summary>
+    /// 就地重开：不复用 SceneManager.LoadScene，因为整个赛场是启动时用代码搭的，
+    /// 重载场景会把布景销毁且不会重建（会白屏 / 碰一下直接通关）。
+    /// </summary>
+    void RestartGame()
+    {
+        score = 0;
+        lives = 3;
+
+        GameSetup.ResetGame();   // 重建砖块、挡板归位、清理碎屑
+        ShowReady();             // 回到「按 K 开始」，不自动发球
+        UpdateUI();
+        scoreText.text = "按 K 或点击屏幕\n开始游戏";
+    }
+
     // 保持球速恒定，并防止球贴着水平线来回跑（那是卡死的常见原因）
     void FixedUpdate()
     {
-        if (gameOver || rb == null) return;
+        if (!started || gameOver || rb == null) return;
         Vector2 v = rb.linearVelocity;
         if (v.sqrMagnitude < 0.001f) return;
 
@@ -52,14 +80,32 @@ public class PlayerMove : MonoBehaviour
 
     void Update()
     {
+        bool keyK = Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame;
+        bool keyEsc = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+        bool tap = Pointer.current != null && Pointer.current.press.wasPressedThisFrame;
+
+        // Esc：退出（Windows 直接退出程序；网页里尝试关闭标签页）
+        if (keyEsc)
+        {
+            QuitGame();
+            return;
+        }
+
+        // 失败 / 通关后：K 或点击 → 重开
         if (gameOver)
         {
-            // 键盘 R 或 手指/鼠标点一下 都能重开（手机上不能按 R）
-            bool key = Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame;
-            bool tap = Pointer.current != null && Pointer.current.press.wasPressedThisFrame;
-            if (key || tap)
+            if (keyK || tap) RestartGame();
+            return;
+        }
+
+        // 开局待发球：K 或点击 → 开始
+        if (!started)
+        {
+            if (keyK || tap)
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                started = true;
+                ResetBall();
+                UpdateUI();
             }
             return;
         }
@@ -74,8 +120,9 @@ public class PlayerMove : MonoBehaviour
             if (lives <= 0)
             {
                 gameOver = true;
+                started = false;
                 rb.linearVelocity = Vector2.zero;
-                scoreText.text = "GAME OVER\nTAP TO RESTART";
+                scoreText.text = "GAME OVER\n按 K 或点击\n重新开始";
                 Sfx.Play("over");
             }
             else
@@ -85,6 +132,27 @@ public class PlayerMove : MonoBehaviour
             }
         }
     }
+
+    // ---------------- 退出 ----------------
+
+    void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#elif UNITY_WEBGL
+        try { CloseTab(); } catch { }
+        if (scoreText != null) scoreText.text = "已请求关闭页面\n（若未关闭请手动关标签页）";
+#else
+        Application.Quit();
+#endif
+    }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    private static extern void CloseTab();
+#endif
+
+    // ---------------- 碰撞 ----------------
 
     void OnCollisionEnter2D(Collision2D collision)
     {
@@ -105,8 +173,9 @@ public class PlayerMove : MonoBehaviour
             if (GameSetup.BricksLeft <= 0)
             {
                 gameOver = true;
+                started = false;
                 rb.linearVelocity = Vector2.zero;
-                scoreText.text = "YOU WIN!\nTAP TO RESTART";
+                scoreText.text = "YOU WIN!\n按 K 或点击\n再来一局";
                 Sfx.Play("win");
             }
             return;

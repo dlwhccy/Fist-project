@@ -49,6 +49,29 @@ public static class GameSetup
         if (cam.GetComponent<FieldFit>() == null) cam.gameObject.AddComponent<FieldFit>();
     }
 
+    /// <summary>
+    /// 重开一局：**不重新加载场景**，就地重建关卡。
+    ///
+    /// 为什么不能用 SceneManager.LoadScene：整套布景（星空、墙体样式、球/挡板外观、生成的砖块）
+    /// 都是 Boot() 在启动时用代码建出来的，而 RuntimeInitializeOnLoadMethod 只在启动时执行一次。
+    /// 重新加载场景会把它们全部销毁且不会重建 —— 表现就是"重开后画面变空白 / 碰一下就通关"。
+    /// </summary>
+    public static void ResetGame()
+    {
+        // 1) 重建砖块：BuildLevel 内部会隐藏手工摆的 5 块砖、销毁旧的 Bricks_Generated 并重新生成
+        BuildLevel();
+
+        // 2) 挡板回中间（y 保持原位）
+        var paddle = GameObject.Find("Paddle");
+        if (paddle != null)
+            paddle.transform.position = new Vector3(0f, paddle.transform.position.y, 0f);
+
+        // 3) 清理残留的碎屑
+        var fragments = Object.FindObjectsByType<Fragment>(FindObjectsSortMode.None);
+        foreach (var frag in fragments)
+            if (frag != null) Object.Destroy(frag.gameObject);
+    }
+
     // ---------------- 相机适配 ----------------
 
     /// 竖屏时把相机拉远，保证场地宽度至少 2*MinHalfWidth；横屏时不放大，靠 MaxHalfWidth 收边
