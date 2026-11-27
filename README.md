@@ -4,6 +4,17 @@
 
 > 项目定位：游戏客户端方向的练手项目，用来练「引擎基础 + C# 编程 + 打包发布」这一整条链路。
 
+## 🎮 在线试玩
+
+**<https://dlwhccy.github.io/Fist-project/>**
+
+手机或电脑浏览器直接打开就能玩，无需下载安装。
+
+| 平台 | 获取方式 |
+|---|---|
+| 网页版（手机/电脑） | 上面的链接，或仓库 `docs/` 目录（Unity WebGL 构建） |
+| Windows 版 | Unity 中 `Build → Windows x64` 构建后可执行文件 |
+
 ![游戏画面](Screenshots/01-gameplay.png)
 
 ## 玩法
