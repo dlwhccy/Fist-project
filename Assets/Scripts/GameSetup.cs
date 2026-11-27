@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 /// <summary>
 /// 开局自动布景：相机自适应、深色背景 + 星空、砖块网格、球/挡板/墙的样式、音效初始化。
@@ -42,6 +43,9 @@ public static class GameSetup
         StyleBall(GameObject.Find("Ball"));
         StylePaddle(GameObject.Find("Paddle"));
 
+        // --- 居中提示文字（开始 / 失败 / 胜利）---
+        BuildMessage();
+
         // --- 关卡 ---
         BuildLevel();
 
@@ -70,6 +74,42 @@ public static class GameSetup
         var fragments = Object.FindObjectsByType<Fragment>(FindObjectsSortMode.None);
         foreach (var frag in fragments)
             if (frag != null) Object.Destroy(frag.gameObject);
+    }
+
+    // ---------------- 居中提示文字 ----------------
+
+    /// <summary>屏幕正中的大字提示（开始 / GAME OVER / YOU WIN），由 PlayerMove 控制内容</summary>
+    public static TMP_Text Message { get; private set; }
+
+    static void BuildMessage()
+    {
+        var canvas = GameObject.Find("Canvas");
+        if (canvas == null) { Debug.LogWarning("[Setup] 找不到 Canvas，提示文字不可用"); return; }
+
+        var go = new GameObject("Message", typeof(RectTransform));
+        go.transform.SetParent(canvas.transform, false);
+
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(0f, 20f);
+        rt.sizeDelta = new Vector2(1100f, 420f);
+
+        var tmp = go.AddComponent<TextMeshProUGUI>();
+        tmp.text = "";
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = new Color32(0xFF, 0xEC, 0xB3, 0xFF);   // 暖金色
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = 26f;
+        tmp.fontSizeMax = 86f;
+        tmp.lineSpacing = 12f;
+        tmp.raycastTarget = false;
+        tmp.outlineWidth = 0.22f;
+        tmp.outlineColor = new Color32(0x10, 0x14, 0x22, 0xFF);
+        tmp.fontSharedMaterial.EnableKeyword("OUTLINE_ON");
+
+        Message = tmp;
     }
 
     // ---------------- 相机适配 ----------------

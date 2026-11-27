@@ -8,6 +8,11 @@ public class PlayerMove : MonoBehaviour
     public TMP_Text scoreText;
     public int lives = 3;
 
+    // 提示文字配色
+    static readonly Color ColorReady = new Color32(0xFF, 0xEC, 0xB3, 0xFF);   // 暖金
+    static readonly Color ColorOver  = new Color32(0xFF, 0x6B, 0x81, 0xFF);   // 珊瑚红
+    static readonly Color ColorWin   = new Color32(0x8B, 0xF0, 0xC0, 0xFF);   // 薄荷绿
+
     private Rigidbody2D rb;
     private int score = 0;
     private bool gameOver = false;
@@ -17,6 +22,8 @@ public class PlayerMove : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         transform.position = new Vector3(0f, -2f, 0f);
+        if (rb != null) rb.linearVelocity = Vector2.zero;
+        UpdateUI();
         ShowReady();
     }
 
@@ -24,7 +31,39 @@ public class PlayerMove : MonoBehaviour
 
     void UpdateUI()
     {
-        scoreText.text = "SCORE " + score + "    LIFE " + lives;
+        if (scoreText != null) scoreText.text = "SCORE " + score + "    LIFE " + lives;
+    }
+
+    /// <summary>屏幕正中大字提示（没有提示层时退化成顶部文字）</summary>
+    void SetMessage(string text, Color color)
+    {
+        var m = GameSetup.Message;
+        if (m != null)
+        {
+            m.color = color;
+            m.text = text;
+            m.transform.SetAsLastSibling();   // 保证盖在分数之上
+        }
+        else if (scoreText != null)
+        {
+            scoreText.text = text;
+        }
+    }
+
+    void ClearMessage()
+    {
+        var m = GameSetup.Message;
+        if (m != null) m.text = "";
+    }
+
+    /// <summary>提示文字呼吸动画</summary>
+    void PulseMessage()
+    {
+        var m = GameSetup.Message;
+        if (m == null || string.IsNullOrEmpty(m.text)) return;
+        Color c = m.color;
+        c.a = 0.70f + 0.30f * (0.5f + 0.5f * Mathf.Sin(Time.time * 3f));
+        m.color = c;
     }
 
     void ShowReady()
@@ -33,7 +72,7 @@ public class PlayerMove : MonoBehaviour
         gameOver = false;
         if (rb != null) rb.linearVelocity = Vector2.zero;
         transform.position = new Vector3(0f, -2f, 0f);
-        scoreText.text = "按 K 或点击屏幕\n开始游戏";
+        SetMessage("按 K 或点击屏幕\n开始游戏", ColorReady);
     }
 
     // ---------------- 球 ----------------
@@ -57,9 +96,8 @@ public class PlayerMove : MonoBehaviour
         lives = 3;
 
         GameSetup.ResetGame();   // 重建砖块、挡板归位、清理碎屑
-        ShowReady();             // 回到「按 K 开始」，不自动发球
         UpdateUI();
-        scoreText.text = "按 K 或点击屏幕\n开始游戏";
+        ShowReady();             // 回到「按 K 开始」，不自动发球
     }
 
     // 保持球速恒定，并防止球贴着水平线来回跑（那是卡死的常见原因）
@@ -80,6 +118,8 @@ public class PlayerMove : MonoBehaviour
 
     void Update()
     {
+        PulseMessage();
+
         bool keyK = Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame;
         bool keyEsc = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
         bool tap = Pointer.current != null && Pointer.current.press.wasPressedThisFrame;
@@ -104,6 +144,7 @@ public class PlayerMove : MonoBehaviour
             if (keyK || tap)
             {
                 started = true;
+                ClearMessage();
                 ResetBall();
                 UpdateUI();
             }
@@ -122,7 +163,7 @@ public class PlayerMove : MonoBehaviour
                 gameOver = true;
                 started = false;
                 rb.linearVelocity = Vector2.zero;
-                scoreText.text = "GAME OVER\n按 K 或点击\n重新开始";
+                SetMessage("GAME OVER\n按 K 或点击重新开始", ColorOver);
                 Sfx.Play("over");
             }
             else
@@ -141,7 +182,7 @@ public class PlayerMove : MonoBehaviour
         UnityEditor.EditorApplication.isPlaying = false;
 #elif UNITY_WEBGL
         try { CloseTab(); } catch { }
-        if (scoreText != null) scoreText.text = "已请求关闭页面\n（若未关闭请手动关标签页）";
+        SetMessage("已请求关闭页面\n若没关闭请按 Ctrl+W", ColorReady);
 #else
         Application.Quit();
 #endif
@@ -175,7 +216,7 @@ public class PlayerMove : MonoBehaviour
                 gameOver = true;
                 started = false;
                 rb.linearVelocity = Vector2.zero;
-                scoreText.text = "YOU WIN!\n按 K 或点击\n再来一局";
+                SetMessage("YOU WIN!\n按 K 或点击再来一局", ColorWin);
                 Sfx.Play("win");
             }
             return;
