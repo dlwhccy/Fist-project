@@ -92,8 +92,8 @@ public static class GameSetup
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, 20f);
-        rt.sizeDelta = new Vector2(1100f, 420f);
+        rt.anchoredPosition = new Vector2(0f, -110f);   // 屏幕中心偏下：避开砖块与分数行
+        rt.sizeDelta = new Vector2(1000f, 300f);
 
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = "";
@@ -101,8 +101,8 @@ public static class GameSetup
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = new Color32(0xFF, 0xEC, 0xB3, 0xFF);   // 暖金色
         tmp.enableAutoSizing = true;
-        tmp.fontSizeMin = 26f;
-        tmp.fontSizeMax = 86f;
+        tmp.fontSizeMin = 22f;
+        tmp.fontSizeMax = 64f;
         tmp.lineSpacing = 12f;
         tmp.raycastTarget = false;
         tmp.outlineWidth = 0.22f;

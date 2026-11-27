@@ -72,7 +72,7 @@ public class PlayerMove : MonoBehaviour
         gameOver = false;
         if (rb != null) rb.linearVelocity = Vector2.zero;
         transform.position = new Vector3(0f, -2f, 0f);
-        SetMessage("按 K 或点击屏幕\n开始游戏", ColorReady);
+        SetMessage("PRESS  K  OR  CLICK\nTO  START", ColorReady);
     }
 
     // ---------------- 球 ----------------
@@ -163,7 +163,7 @@ public class PlayerMove : MonoBehaviour
                 gameOver = true;
                 started = false;
                 rb.linearVelocity = Vector2.zero;
-                SetMessage("GAME OVER\n按 K 或点击重新开始", ColorOver);
+                SetMessage("GAME  OVER\nPRESS  K  TO  RESTART", ColorOver);
                 Sfx.Play("over");
             }
             else
@@ -182,7 +182,7 @@ public class PlayerMove : MonoBehaviour
         UnityEditor.EditorApplication.isPlaying = false;
 #elif UNITY_WEBGL
         try { CloseTab(); } catch { }
-        SetMessage("已请求关闭页面\n若没关闭请按 Ctrl+W", ColorReady);
+        SetMessage("CLOSING...\nUSE  CTRL+W  IF  IT  STAYS", ColorReady);
 #else
         Application.Quit();
 #endif
@@ -216,7 +216,7 @@ public class PlayerMove : MonoBehaviour
                 gameOver = true;
                 started = false;
                 rb.linearVelocity = Vector2.zero;
-                SetMessage("YOU WIN!\n按 K 或点击再来一局", ColorWin);
+                SetMessage("YOU  WIN!\nPRESS  K  TO  PLAY  AGAIN", ColorWin);
                 Sfx.Play("win");
             }
             return;
